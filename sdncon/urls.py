@@ -90,6 +90,7 @@ urlpatterns = patterns('',
     (r'^rest/v1/realtimetest/network/(?P<subcategory>[A-Za-z0-9_:.\-]+)/?$', 'sdncon.rest.views.do_sdnplatform_realtimetest', {'category': 'network'}),
     
     # REST API for accessing controller system information
+    (r'^rest/v1/system/restifaddr/', 'sdncon.rest.views.do_controller_restifaddr'),
     (r'^rest/v1/system/version/?$', 'sdncon.rest.views.do_system_version', {}),
     (r'^rest/v1/system/interfaces/?$', 'sdncon.rest.views.do_system_inet4_interfaces', {}),
     (r'^rest/v1/system/uptime/?$', 'sdncon.rest.views.do_system_uptime', {}),

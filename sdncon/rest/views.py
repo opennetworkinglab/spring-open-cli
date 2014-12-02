@@ -49,15 +49,14 @@ TEXT_JAVASCRIPT_CONTENT_TYPE = 'text/javascript'
 JSON_CONTENT_TYPE = 'application/json'
 BINARY_DATA_CONTENT_TYPE = 'application/octet-stream'
 
+controller_rest_ip = "127.0.0.1"
+controller_rest_port = "8080"
+
 onos = 1
 
-if onos == 1:
-    #CONTROLLER_URL_PREFIX = 'http://localhost:9000/wm/'
-    CONTROLLER_URL_PREFIX = 'http://localhost:8080/wm/'
-else:
-    CONTROLLER_URL_PREFIX = 'http://localhost:8080/wm/'
 
 def controller_url(*elements):
+    CONTROLLER_URL_PREFIX = "http://%s:%s/wm/" % (controller_rest_ip, controller_rest_port)
     return CONTROLLER_URL_PREFIX + '/'.join(elements)
 
 class RestException(Exception):
@@ -2206,3 +2205,22 @@ def do_show_policy(request):
     if request.META['QUERY_STRING']:
         url += '?' + request.META['QUERY_STRING']
     return get_sdnplatform_response(url)
+
+@safe_rest_view
+def do_controller_restifaddr(request):
+    global controller_rest_ip, controller_rest_port
+    if request.method != 'PUT':
+        raise RestInvalidMethodException()
+    controller_rest_if = request.raw_post_data
+    if controller_rest_if.startswith('"') and controller_rest_if.endswith('"'):
+        controller_rest_if = controller_rest_if[1:-1]
+    #controller_rest_if.replace('\"','')
+    controller_rest_if_addr = controller_rest_if.split(':')
+    controller_rest_ip = controller_rest_if_addr[0]
+    if (len(controller_rest_if_addr) < 2):
+        controller_rest_port = "8080"
+    else:
+        controller_rest_port = controller_rest_if_addr[1] 
+    response_text = "http://%s:%s" % (controller_rest_ip,controller_rest_port)
+    response = HttpResponse(response_text, JSON_CONTENT_TYPE)
+    return response

@@ -80,6 +80,7 @@ class StoreClient():
     table_read_url = "http://%s/rest/v1/model/%s/"
     entry_post_url = "http://%s/rest/v1/model/%s/"
     user_data_url = "http://%s/rest/v1/data/"
+    sdn_platform_data_url = "http://%s/rest/v1/system/"
 
     def set_controller(self,controller):
         self.controller = controller
@@ -89,6 +90,11 @@ class StoreClient():
 
     def display_reply_mode(self, mode):
         self.display_rest_reply = mode
+        
+    def set_sdn_controller_platform_rest_if(self, sdn_controller_rest_if):
+        url = self.sdn_platform_data_url % (self.controller)
+        url = url + "restifaddr/"
+        data = self.rest_post_request(url, sdn_controller_rest_if)
 
     def rest_simple_request(self,url, use_cache = None, timeout = None):
         # include a trivial retry mechanism ... other specific

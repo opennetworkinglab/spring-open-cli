@@ -297,6 +297,9 @@ class SDNSh():
     #       talk to eth0 addr instead of 127.0.0.1
     controller_for_prompt = "127.0.0.1:8000"
     cluster = "default"
+    
+    known_sdn_platforms = ["127.0.0.1:8080"]
+    sdn_controller_paltform = None
 
     run = True
 
@@ -780,7 +783,7 @@ class SDNSh():
         parser = OptionParser()
         parser.add_option("-c", "--controller", dest="controller",
                           help="set default controller to CONTROLLER", 
-                          metavar="CONTROLLER", default=self.controller)
+                          metavar="CONTROLLER", default=self.sdn_controller_paltform)
         parser.add_option("-S", "--syntax", dest='dump_syntax',
                           help="display syntax of loaded commands",
                           action='store_true', default=False)
@@ -799,9 +802,11 @@ class SDNSh():
                           help='suppress warning messages',
                           action='store_true', default=False)
         (self.options, self.args) = parser.parse_args()
-        self.controller = self.options.controller
-        if not self.controller:
+        if self.controller is None:
             self.controller = "127.0.0.1:8000"
+        self.sdn_controller_paltform = self.options.controller
+        if not self.sdn_controller_paltform:
+            self.sdn_controller_paltform = "127.0.0.1:8080"
         self.dump_syntax = self.options.dump_syntax
         if not self.dump_syntax:
             self.dump_syntax = False
@@ -826,6 +831,7 @@ class SDNSh():
 
         self.store = StoreClient()
         self.store.set_controller(self.controller)
+        self.store.set_sdn_controller_platform_rest_if(self.sdn_controller_paltform)
 
         mi = Modi(self, CliModelInfo())
         self.mi = mi
