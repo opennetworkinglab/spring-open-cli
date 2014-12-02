@@ -1,8 +1,8 @@
-SDN Platform
-============
+ONOS Segment Routing (SR) CLI
+==============================
 
-This repository contains an advanced SDN controller and platform for
-network virtualization.
+This repository contains CLI for Segment Routing Usecase running on ONOS SDN 
+controller. 
 
 # Building #
 Install prerequisites.  You'll just need a basic functioning build
@@ -16,17 +16,18 @@ Note that on Ubuntu 12.04, you may want to remove java6:
 
     sudo apt-get remove openjdk-6-jre-lib openjdk-6-jre-headless
 
-To build the controller:
+To build the cli:
 
 1. Clone from repository
-2. `./setup.sh`
-3. `make`
+2. cd onos-sr-cli
+3. `./setup.sh`
+4. `make`
 
 # Running #
 
 ## Sdncon ##
-To run the controller and the cli, you need to be running a working
-instance of cassandra and sdncon.  The setup script will have created
+To run the ONOS SR cli, you need to be running a working
+instance of sdncon.  The setup script will have created
 a python virtualenv for you to make it easy to run the python
 components.  You must first activate the virtualenv in your current
 shell by running
@@ -35,32 +36,23 @@ shell by running
 
 Now you can easily run any of the python commands.
 
-The make targets `start-cassandra` and `start-sdncon` will
-automatically start a local copy of cassandra and sdncon.  There are
+The make targets `start-sdncon` will
+automatically start a local copy of sdncon.  There are
 corresponding stop commands as well.  These commands require an
 activated virtualenv.  If you run
 
-    make stop-sdncon reset-cassandra start-sdncon
+    make stop-sdncon start-sdncon
 
-This will stop any existing sdncon and cassandra, reset their
+This will stop any existing sdncon, reset their
 databases to zero, and start a new sdncon with a fresh database.  The
 output from these commands will go to a log file in your
 `workspace/ve/logs` directory.
 
 ## Controller ##
 
-Now you're ready to run a copy of sdnplatform.  The easiest way is to
-run
-
-    make start-sdnplatform
-
-or you can do this manually with output to standard out by running
-from the `sdnplatform` directory
-
-    java -jar target/sdnplatform.jar
-
-You can specify your own configuration file with `-cf [path]` or use
-the default.
+ONOS SR cli and sdncon runs ontop of ONOS SDN controller platform. Follow the 
+ONOS SDN controller installation instructions to launch the controller
+<TODO: Link to ONOS repo> 
 
 ## CLI ##
 
@@ -70,22 +62,6 @@ run it from the command line from the CLI directory:
     ./cli.py
 
 The CLI has online help and tab completion on its commands.
-
-## Web-Dashboard ##
-
-The example web-dashboard application depends on a running instance of sdncon and a web server to serve content. The web-dashboard files are divided into two parts:
-
-    document-root: Static HTML, javascript, and css files.
-    cgi-bin-root : Python based CGI scripts.
-
-To run the web-dashboard, copy the files into the an apropriate webserver directory for the content type.
-
-On Ubuntu 12.04 with a default Apache2 install:
-
-1. Move `document-root` contents into /var/www
-2. Move `cgi-bin-root` contents into /usr/lib/cgi-bin
-
-If the webserver does not use `/cgi-bin` for CGI file access, modify the `CGI_PATH` variable in the dashboard.html file to the apropriate path.
 
 # Eclipse environment #
 
@@ -99,14 +75,12 @@ the new workspace, e.g. "Workspace.net-virt-platform"
 3) Once in the new workspace, import all of the eclipse projects
 Click File -> Import -> General -> Existing Projects into Workspace
 -> Next in the "Select Root Directory" dialog, type in or navigate
-to your checkout of the net-virt-platform base directory, e.g.,
-~/git/net-virt-platform .
+to your checkout of the ONOS SR CLI base directory, e.g.,
+~/git/onos-sr-cli .
 
-Eclipse should automatically find four eclipse projects: 
+Eclipse should automatically find two eclipse projects: 
 * cli
-* django_cassandra_backend
 * sdncon
-* sdnplatform
 Make sure they are all checked (the default) and click "Finish"
 
 If you are looking to do python development, it is recommended that
