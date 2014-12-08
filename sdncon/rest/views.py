@@ -401,7 +401,7 @@ def do_model_list(request):
 def do_realtimestats(request, stattype, dpid):
     """
     This returns realtime statistics (flows, ports, table, aggregate,
-    desc, ...)  for a dpid by calling the localhost sdnplatform
+    desc, ...)  for a dpid by calling the sdnplatform
     """
     #raise RestInvalidMethodException()
     if request.method != 'GET':
@@ -411,14 +411,14 @@ def do_realtimestats(request, stattype, dpid):
         stattype = 'groupStats'
     if stattype == 'groupdesc':
         stattype = 'groupDesc'
-    url = "http://localhost:8080/wm/floodlight/core/switch/%s/%s/json" % (dpid, stattype)
+    url = "http://%s:%s/wm/floodlight/core/switch/%s/%s/json" % (controller_rest_ip,controller_rest_port,dpid, stattype)
     return get_sdnplatform_response(url)
 
 @safe_rest_view
 def do_realtimegroupstats(request, groupId, dpid ):
     """
     This returns realtime group statistics for specified groupId
-    for a dpid by calling the localhost sdnplatform
+    for a dpid by calling the sdnplatform
     """
     #raise RestInvalidMethodException()
     if request.method != 'GET':
@@ -426,21 +426,19 @@ def do_realtimegroupstats(request, groupId, dpid ):
     #url = controller_url('core', 'switch', dpid, stattype, 'json')
     #import error
     #raise error.ArgumentValidationError('\n\n\n %s' % (groupId))
-    url = "http://localhost:8080/wm/floodlight/core/switch/%s/groupStats/%s/json" % (dpid, groupId)
+    url = "http://%s:%s/wm/floodlight/core/switch/%s/groupStats/%s/json" % (controller_rest_ip,controller_rest_port,dpid, groupId)
     return get_sdnplatform_response(url)
 
 @safe_rest_view
 def do_tablerealtimestats(request, tabletype, dpid):
     """
     This returns realtime statistics per table (flows (only)
-    current implementation)  for a dpid by calling the localhost sdnplatform
+    current implementation)  for a dpid by calling the sdnplatform
     """
     #raise RestInvalidMethodException()
     if request.method != 'GET':
         raise RestInvalidMethodException()
-    #url = controller_url('core', 'switch', dpid, stattype, 'json')
-    url = "http://localhost:8080/wm/floodlight/core/switch/%s/table/%s/flow/json" % (dpid,tabletype)
-    #url ="http://localhost:8080/wm/floodlight/core/switch/00:00:00:00:00:00:00:01/flow/json"
+    url = "http://%s:%s/wm/floodlight/core/switch/%s/table/%s/flow/json" % (controller_rest_ip,controller_rest_port,dpid,tabletype)
     return get_sdnplatform_response(url)
 
 @safe_rest_view
@@ -754,10 +752,7 @@ def do_router_stats(request, stattype, dpid):
     #raise RestInvalidMethodException()
     if request.method != 'GET':
         raise RestInvalidMethodException()
-    #url = controller_url('core', 'switch', dpid, stattype, 'json')
-    url = "http://localhost:8080/wm/onos/segmentrouting/router/%s/%s" % (dpid, stattype)
-    #raise RestInvalidMethodException(url)
-    #url = "http://localhost:8080/wm/onos/segementrouting/router/00:00:00:00:00:00:00:01/port"
+    url = "http://%s:%s/wm/onos/segmentrouting/router/%s/%s" % (controller_rest_ip,controller_rest_port,dpid, stattype)
     return get_sdnplatform_response(url)
 
 @safe_rest_view
