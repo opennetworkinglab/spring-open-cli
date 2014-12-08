@@ -10,18 +10,13 @@ environment plus a few build-time dependencies.  On Ubuntu, you can
 run:
 
     sudo apt-get install unzip python-dev python-virtualenv \
-    	 git openjdk-7-jdk ant build-essential
-
-Note that on Ubuntu 12.04, you may want to remove java6:
-
-    sudo apt-get remove openjdk-6-jre-lib openjdk-6-jre-headless
+    	 git build-essential
 
 To build the cli:
 
 1. Clone from repository
-2. cd onos-sr-cli
+2. cd spring-open-cli
 3. `./setup.sh`
-4. `make`
 
 # Running #
 
@@ -60,6 +55,8 @@ The CLI depends on a running instance of sdncon.  To run the CLI, just
 run it from the command line from the CLI directory:
 
     ./cli.py
+    OR
+    ./cli.py --controller <IP>[:<port>]
 
 The CLI has online help and tab completion on its commands.
 
