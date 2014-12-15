@@ -2,12 +2,56 @@ import command
 import json
 import fmtcnv
 
+TUNNELSET_SUBMODE_COMMAND_DESCRIPTION = {
+    'name'          : 'tunnelset',
+    'short-help'    : 'Enter tunnelset submode, configure tunnelset details',
+    'mode'          : 'config',
+    'parent-field'  : None,
+    'command-type'  : 'config-submode',
+    'obj-type'      : 'tunnelset-config',
+    'submode-name'  : 'config-tunnelset',
+    'doc'           : 'tunnelset|tunnelset',
+    'doc-example'   : 'tunnelset|tunnelset-example',
+    'args' : (
+        {
+            'field'        : 'tunnelset-id',
+            'type'         : 'identifier',
+            #'completion'   : 'complete-object-field',
+            'syntax-help'  : 'Enter a tunnelset name',
+            'doc'          : 'tunnelset|tunnelset',
+            'doc-include'  : [ 'type-doc' ],
+            #'completion'   : 'tunnelset-id-completion',
+            'action'       : (
+                                {
+                                    'proc' : 'create-tunnelset',
+                                },
+                                {
+                                    'proc' : 'push-mode-stack',
+                                },
+                              ),
+            'no-action': (
+                {
+                    'proc' : 'remove-tunnelset',
+                }
+            ),
+        }
+    )
+}
+
+TUNNELSET_CONFIG_FORMAT = {
+    'tunnelset-config' : {
+        'field-orderings' : {
+            'default' : [
+                          'tunnelset-id',
+                        ],
+        },
+    },
+}
 
 TUNNEL_SUBMODE_COMMAND_DESCRIPTION = {
     'name'          : 'tunnel',
     'short-help'    : 'Enter tunnel submode, configure tunnel details',
-    'mode'          : 'config',
-    'parent-field'  : None,
+    'mode'          : ['config', 'config-tunnelset'],
     'command-type'  : 'config-submode',
     'obj-type'      : 'tunnel-config',
     'submode-name'  : 'config-tunnel',
@@ -115,7 +159,7 @@ TUNNEL_ADJACENCY_INFO = (
 # obj_type flow-entry field hard-timeout
 TUNNEL_NODE_ENTRY_COMMAND_DESCRIPTION = {
     'name'                : 'node',
-    'mode'                : 'config-tunnel',
+    'mode'                : 'config-tunnel*',
     'short-help'          : 'Set node for this tunnel',
     'doc'                 : 'tunnel|node',
     'doc-example'         : 'tunnel|node',
@@ -143,7 +187,7 @@ TUNNEL_NODE_ENTRY_COMMAND_DESCRIPTION = {
     )
 }
 
-SWITCH_TUNNEL_COMMAND_DESCRIPTION = {
+SHOW_TUNNEL_COMMAND_DESCRIPTION = {
     'name'                : 'show',
     'mode'                : 'login',
     'command-type'        : 'display-table',
@@ -180,6 +224,42 @@ SWITCH_TUNNEL_COMMAND_DESCRIPTION = {
     )
 }
 
+SHOW_TUNNELSET_COMMAND_DESCRIPTION = {
+    'name'                : 'show',
+    'mode'                : 'login',
+    'command-type'        : 'display-table',
+    'all-help'            : 'Show tunnelset information',
+    'short-help'          : 'Show tunnelset summary',
+    #'obj-type'            : 'switches',
+    'doc'                 : 'tunnelset|show',
+    'doc-example'         : 'tunnelset|show-example',
+    'args' : (
+        {
+            'token'  : 'tunnelset',
+            'field'  : 'showtunnelset',
+            'sort'   : ['tunnelsetId',],
+            'action' : 'display-rest',
+            'doc'    : 'tunnelset|show',
+            'url'    : [
+                        'showtunnelset',
+                       ],
+            'format' : 'show_tunnelset',
+        },
+              { 
+            'optional'   : True,
+            'choices' : (
+                {
+                 'field'      : 'showtunnelset',
+                 'type'       : 'enum',
+                 'values'     : ('details',),
+                 'optional'   : True,
+                 'format' : 'show_tunnelset',
+                 'data'         : { 'detail' : 'details' },
+                },
+                         ),
+               }
+    )
+}
 
 def tunnel_id_completion(prefix, completions):
     query_url = "http://127.0.0.1:8000/rest/v1/showtunnel"

@@ -93,6 +93,66 @@ def check_rest_result(result, message=None):
         if error_type:
             raise error.CommandRestError(result, message)
 
+tunnelset_id=None
+tunnelset_dict=[]
+def tunnelset_create(data=None):
+    global tunnelset_id,tunnelset_dict
+    if sdnsh.description:   # description debugging
+        print "tunnelset_create:" , data
+    if data.has_key('tunnelset-id'):
+        if (tunnelset_id != None):
+            if sdnsh.description:   # description debugging
+                print "tunnelset_create: previous data is not cleaned up"
+            tunnelset_id=None
+            tunnelset_dict=[]
+        tunnelset_id=data['tunnelset-id']
+        tunnelset_dict=[]
+    if sdnsh.description:   # description debugging
+        print "tunnelset_create:" , tunnelset_id
+
+def tunnelset_config_exit():
+    global tunnelset_id,tunnelset_dict
+    if sdnsh.description:   # description debugging
+        print "tunnelset_config_exit entered", tunnelset_dict
+    if tunnelset_dict:
+        url_str = ""
+        entries = tunnelset_dict
+        url_str = "http://%s/rest/v1/tunnelset/" % (sdnsh.controller)
+        obj_data = {}
+        obj_data['tunnelset_id']=tunnelset_id
+        obj_data['tunnel_params']=entries
+        result = "fail"
+        try:
+            result = sdnsh.store.rest_post_request(url_str,obj_data)
+        except Exception, e:
+            errors = sdnsh.rest_error_to_dict(e)
+            print sdnsh.rest_error_dict_to_message(errors)
+        # LOOK! successful stuff should be returned in json too.
+        tunnelset_dict = []
+        tunnelset_id = None
+        curr_tunnel_id = None
+        if result != "success":
+            print "command failed"
+    else:
+        print "empty command"
+    #Clear the transit information    
+            
+def tunnelset_remove(data=None):
+    if sdnsh.description:   # description debugging
+        print "tunnelset_remove:" , data
+    tunnelset_id=data['tunnelset-id']
+    url_str = "http://%s/rest/v1/tunnel/" % (sdnsh.controller)
+    obj_data = {}
+    obj_data['tunnelset_id']=data['tunnelset-id']
+    result = "fail"
+    try:
+        result = sdnsh.store.rest_post_request(url_str,obj_data,'DELETE')
+    except Exception, e:
+        errors = sdnsh.rest_error_to_dict(e)
+        print sdnsh.rest_error_dict_to_message(errors)
+    if not result.startswith("SUCCESS"):
+        print result
+
 tunnel_id=None
 tunnel_dict={}
 def tunnel_create(data=None):
@@ -118,13 +178,18 @@ def tunnel_config_exit():
     global tunnel_id,tunnel_dict
     if sdnsh.description:   # description debugging
         print "tunnel_config_exit entered", tunnel_dict
-    if tunnel_dict:
+        
+    entries = tunnel_dict[tunnel_id]
+    obj_data = {}
+    obj_data['tunnel_id']=tunnel_id
+    obj_data['label_path']=entries
+    if tunnelset_id:
+        tunnelset_dict.append(obj_data)
+        tunnel_dict = {}
+        tunnel_id = None
+    elif tunnel_dict:
         url_str = ""
-        entries = tunnel_dict[tunnel_id]
         url_str = "http://%s/rest/v1/tunnel/" % (sdnsh.controller)
-        obj_data = {}
-        obj_data['tunnel_id']=tunnel_id
-        obj_data['label_path']=entries
         result = "fail"
         try:
             result = sdnsh.store.rest_post_request(url_str,obj_data)
@@ -156,6 +221,7 @@ def tunnel_remove(data=None):
     if not result.startswith("SUCCESS"):
         print result
 
+
 policy_obj_data = {}
 def policy_create(data=None):
     global policy_obj_data
@@ -174,7 +240,15 @@ def policy_create(data=None):
     if data.has_key('priority'):
         policy_obj_data['priority'] = data['priority']
     if data.has_key('tunnel-id'):
+        if policy_obj_data.has_key('tunnelset_id'):
+            print "ERROR: Policy can not point to both tunnelset and tunnel"
+            return
         policy_obj_data['tunnel_id'] = data['tunnel-id']
+    if data.has_key('tunnelset-id'):
+        if policy_obj_data.has_key('tunnel_id'):
+            print "ERROR: Policy can not point to both tunnelset and tunnel"
+            return
+        policy_obj_data['tunnelset_id'] = data['tunnelset-id']
     
     if sdnsh.description:   # description debugging
         print policy_obj_data
@@ -744,6 +818,9 @@ def push_mode_stack(mode_name, obj_type, data, parent_field = None, parent_id = 
     # and additional config modes must also have the same prefix as the
     # current mode.
     current_mode = sdnsh.current_mode()
+    if (mode_name == 'config-tunnel'):
+        if (current_mode == 'config-tunnelset'):
+            mode_name = 'config-tunnelset-tunnel'
 
     if sdnsh.description:   # description debugging
         print "push_mode: ", mode_name, obj_type, data, parent_field, parent_id
@@ -855,7 +932,9 @@ def push_mode_stack(mode_name, obj_type, data, parent_field = None, parent_id = 
     if sdnsh.description:   # description debugging
         print "push_mode: ", mode_name, obj_type, pk_name, key
     exitCallback = None
-    if (mode_name == 'config-tunnel'):
+    if (mode_name == 'config-tunnelset'):
+        exitCallback = tunnelset_config_exit
+    if ((mode_name == 'config-tunnel') or (mode_name == 'config-tunnelset-tunnel')):
         exitCallback = tunnel_config_exit
     if (mode_name == 'config-policy'):
         exitCallback = policy_config_exit
@@ -2218,6 +2297,7 @@ def command_display_rest(data, url = None, sort = None, rest_type = None,
             #    labelStackString = labelStackString[:-1]
             #    labelStackString += ']'
             tunnelId = tunnel.get('tunnelId')
+            tunnelsetId = tunnel.get('tunnelsetId')
             tunnelPath = tunnel.get('tunnelPath')
             dpidGroup = str(tunnel.get('dpidGroup'))
             dpidGroup= remove_unicodes(dpidGroup)
@@ -2228,7 +2308,35 @@ def command_display_rest(data, url = None, sort = None, rest_type = None,
                                'dpidGroup'      : dpidGroup,
                                'tunnelPath'     : tunnelPath,
                                'policies'       : policies,
+                               'tunnelset'      : tunnelsetId,
                                })
+        entries = combResult
+
+    if 'showtunnelset' in data  and (data['showtunnelset'] == 'tunnelset' or data['detail'] == 'details'):
+        #eraise error.ArgumentValidationError('\n\n\n %s' % (entries))
+        combResult = []
+        tunnelsetList = entries
+        for tunnelset in tunnelsetList:
+            tunnelsetId = tunnelset.get('tunnelsetId')
+            policies = tunnelset.get('policies')
+            tunnelList = tunnelset.get('constituentTunnels')
+            for tunnel in tunnelList:
+                labelStackList = (tunnel.get('labelStack'))
+                labelStackString = str(labelStackList)
+                labelStackString = remove_unicodes(labelStackString)
+                tunnelId = tunnel.get('tunnelId')
+                tunnelPath = tunnel.get('tunnelPath')
+                dpidGroup = str(tunnel.get('dpidGroup'))
+                dpidGroup= remove_unicodes(dpidGroup)
+                combResult.append({
+                                   'tunnelsetId'    : tunnelsetId,
+                                   'policies'       : policies,
+                                   'tunnelId'       : tunnelId,
+                                   'labelStack'     : labelStackString,
+                                   'dpidGroup'      : dpidGroup,
+                                   'tunnelPath'     : tunnelPath,
+                                   'tunnelset'      : tunnelsetId,
+                                   })
         entries = combResult
 
     if 'showpolicy' in data  and data['showpolicy'] == 'policy':
@@ -3880,6 +3988,14 @@ def init_actions(bs, modi):
 
     command.add_action('remove-tunnel',
                        tunnel_remove,
+                       {'kwargs': {'data' : '$data',}})
+
+    command.add_action('create-tunnelset',
+                       tunnelset_create,
+                       {'kwargs': {'data' : '$data',}})
+
+    command.add_action('remove-tunnelset',
+                       tunnelset_remove,
                        {'kwargs': {'data' : '$data',}})
 
     command.add_action('create-policy',

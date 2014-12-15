@@ -2144,6 +2144,25 @@ def do_execute_upgrade_step(request):
     return HttpResponse(simplejson.dumps(jsondict), JSON_CONTENT_TYPE)
 
 @safe_rest_view
+def do_sdnplatform_tunnelset_config(request):    
+    if request.method != 'PUT' and request.method != 'DELETE':
+        raise RestInvalidMethodException()
+
+    url = controller_url('onos', 'segmentrouting', 'tunnelset')
+    post_data = request.raw_post_data
+    put_request = urllib2.Request(url, post_data)
+    method = request.method
+    if method == 'PUT':
+        method = 'POST'
+    put_request.get_method = lambda: method
+    put_request.add_header('Content-Type', 'application/json')
+    response = urllib2.urlopen(put_request)
+    response_text = response.read()
+    response = HttpResponse(response_text, JSON_CONTENT_TYPE)
+    
+    return response
+
+@safe_rest_view
 def do_sdnplatform_tunnel_config(request):    
     if request.method != 'PUT' and request.method != 'DELETE':
         raise RestInvalidMethodException()
@@ -2187,6 +2206,16 @@ def do_show_tunnel(request):
     #    raise RestInvalidMethodException()
 
     url = controller_url('onos', 'segmentrouting','tunnel')
+    if request.META['QUERY_STRING']:
+        url += '?' + request.META['QUERY_STRING']
+    return get_sdnplatform_response(url)
+
+@safe_rest_view
+def do_show_tunnelset(request):    
+    #if request.method != 'GET':
+    #    raise RestInvalidMethodException()
+
+    url = controller_url('onos', 'segmentrouting','tunnelset')
     if request.META['QUERY_STRING']:
         url += '?' + request.META['QUERY_STRING']
     return get_sdnplatform_response(url)

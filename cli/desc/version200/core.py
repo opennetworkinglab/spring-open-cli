@@ -2399,11 +2399,36 @@ REALTIME_TABLE_FORMAT = {
 SHOW_TUNNEL_FORMAT = {
     'show_tunnel' : {
         'field-orderings' : {
-            'default' : [ 'Idx', 'tunnelId', 'policies','tunnelPath','labelStack',],
-            'details' : [ 'Idx', 'tunnelId', 'policies','tunnelPath','labelStack', 'dpidGroup',],
+            'default' : [ 'Idx', 'tunnelId', 'policies','tunnelset','tunnelPath','labelStack',],
+            'details' : [ 'Idx', 'tunnelId', 'policies','tunnelset','tunnelPath','labelStack', 'dpidGroup',],
             },
         'fields': {
             'tunnelId'         : { 'verbose-name' : 'Id',
+                               },
+            'tunnelset'         : { 'verbose-name' : 'tunnelset',
+                               },
+            'dpidGroup'         : { 'verbose-name' : 'Dpid(Node Id)/Group',
+                               },
+            'labelStack'         : { 'verbose-name' : 'Label Stack [Outer-->Inner]',
+                               },
+            'tunnelPath'         : { 'verbose-name' : 'Tunnel Path [Head-->Tail]',
+                               },
+                   }
+        },
+}
+
+SHOW_TUNNELSET_FORMAT = {
+    'show_tunnelset' : {
+        'field-orderings' : {
+            'default' : [ 'Idx', 'tunnelsetId', 'policies','tunnelId','tunnelPath','labelStack',],
+            'details' : [ 'Idx', 'tunnelsetId', 'policies','tunnelId','tunnelPath','labelStack', 'dpidGroup',],
+            },
+        'fields': {
+            'tunnelsetId'         : { 'verbose-name' : 'Id',
+                               },
+            'tunnelId'         : { 'verbose-name' : 'tunnelId',
+                               },
+            'tunnelset'         : { 'verbose-name' : 'tunnelset',
                                },
             'dpidGroup'         : { 'verbose-name' : 'Dpid(Node Id)/Group',
                                },

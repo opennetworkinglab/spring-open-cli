@@ -265,6 +265,24 @@ class CliModelInfo():
                                        },
                         },
         },
+
+        'tunnelset-config' : {
+            'source'          : 'user-config',
+            'source'          : 'display',
+            'url'             : 'tunnelset-config',
+            'config-obj-type' : 'tunnelset-config',
+
+            'fields' : {
+                'tunnelset-id'               : {
+                                         'edit' : False,
+                                         'max_length': 32,
+                                         'null': False,
+                                         'primary_key': True,
+                                         'type': 'CharField',
+                                         'edit' : False,
+                                       },
+                        },
+        },
                                       
         'policy-config' : {
             'source'          : 'user-config',

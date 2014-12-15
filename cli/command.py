@@ -1750,16 +1750,34 @@ class CommandCompleter(CommandHandler):
                     command_mode = command.get('mode')
                     if command_mode and command_mode[-1] == '*':
                         command_mode = command_mode[:-1]
-                    if command_mode and sdnsh.current_mode() != command_mode:
+                    if (command_mode == 'config-tunnel' and
+                       sdnsh.current_mode() == 'config-tunnelset-tunnel'):
+                        command_mode = 'config-tunnelset-tunnel'
+                    if (command_mode and 
+                        ((_is_list(command_mode) and not sdnsh.current_mode() in command_mode) 
+                         or (sdnsh.current_mode() != command_mode))):
+
                         # this is completing a different item on the stack.
                         # XXX needs better api's here.
                         found_in_mode_stack = False
-                        for x in sdnsh.mode_stack:
-                            if x['mode_name'] == command_mode:
-                                found_in_mode_stack = True
-                                curr_obj_type = x['obj_type']
-                                curr_obj_id   = x['obj']
-                                break
+                        
+                        if _is_list(command_mode):
+                            for cmd_mode in command_mode:
+                                for x in sdnsh.mode_stack:
+                                    if x['mode_name'] == cmd_mode:
+                                        found_in_mode_stack = True
+                                        curr_obj_type = x['obj_type']
+                                        curr_obj_id   = x['obj']
+                                        break
+                                if found_in_mode_stack == True:
+                                    break
+                        else:
+                            for x in sdnsh.mode_stack:
+                                if x['mode_name'] == command_mode:
+                                    found_in_mode_stack = True
+                                    curr_obj_type = x['obj_type']
+                                    curr_obj_id   = x['obj']
+                                    break
                         if not found_in_mode_stack:
                             raise error.CommandDescriptionError(
                                     'Unable to find mode %s' % command_mode, 
@@ -3865,6 +3883,14 @@ def init_command(bs, modi):
         'no-action': 'delete-objects',
     })
 
+    add_command_type('create-tunnelset', {
+        'action': 'create-tunnelset'
+    })
+    
+    add_command_type('remove-tunnelset', {
+        'action': 'remove-tunnelset'
+    })
+    
     add_command_type('create-tunnel', {
         'action': 'create-tunnel'
     })

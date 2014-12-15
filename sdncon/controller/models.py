@@ -64,6 +64,36 @@ def get_timestamp():
     """
     return int(time.time()*1000000)
 
+class Tunnelset(models.Model):
+
+    id_max_length = 64
+    #
+    # fields ----------------------------------------
+
+    #
+    # Unique name of the Tunnel
+    #
+    tunnelset_id = models.CharField(
+        primary_key  = True,
+        verbose_name = 'Tunnelset Id',
+        help_text    = 'A unique Id for a Tunnelset',
+        validators   = [ TenantNameValidator() ],
+        max_length   = id_max_length)
+    
+    #
+    # end fields ----------------------------------------
+
+    def __unicode__ (self):
+        return self.tunnelset_id
+    
+    def delete(self):
+        super(Tunnelset, self).delete()
+    class Rest:
+        NAME = 'tunnelset-config'
+        FIELD_INFO = (
+            {'name': 'tunnelset_id',    'rest_name': 'tunnelset-id'},
+            )
+
 class Tunnel(models.Model):
 
     id_max_length = 64

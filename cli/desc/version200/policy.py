@@ -254,11 +254,35 @@ POLICY_TUNNEL_ID_COMMAND_DESCRIPTION = {
                                 'proc' : 'create-policy',
                             },
                          ),
-        'completion'   : 'tunnelid-completion',
+        'completion'   : 'tunnel-id-completion',
         'field'        : 'tunnel-id',
         'type'         : 'identifier',
         'syntax-help'  : 'Enter tunnel id',
         'doc'          : 'policy|tunnel-id',
+        'doc-include'  : [ 'type-doc' ],
+    }
+}
+
+POLICY_TUNNELSET_ID_COMMAND_DESCRIPTION = {
+    'name'            : 'tunnelset',
+    'mode'            : 'config-policy',
+    #'obj-type'        : 'policy-config',
+    'command-type'    : 'config',
+    'short-help'      : 'Configure tunnelset id',
+    #'doc'             : 'policy|tunnel',
+    #'doc-example'     : 'policy|policy-tunnel-example',
+    'parent-field'    : 'policy',
+    'args' : {
+        'action'       : (
+                            {
+                                'proc' : 'create-policy',
+                            },
+                         ),
+        'completion'   : 'tunnelset-id-completion',
+        'field'        : 'tunnelset-id',
+        'type'         : 'identifier',
+        'syntax-help'  : 'Enter tunnelset id',
+        'doc'          : 'policy|tunnelset-id',
         'doc-include'  : [ 'type-doc' ],
     }
 }
@@ -322,6 +346,19 @@ command.add_completion('tunnel-id-completion', tunnel_id_completion,
                                     'completions'  : '$completions',
                                     }})
 
+def tunnelset_id_completion(prefix, completions):
+    query_url = "http://127.0.0.1:8000/rest/v1/showtunnelset"
+    result = command.sdnsh.store.rest_simple_request(query_url)
+    entries = json.loads(result)
+    for entry in entries:
+        if entry['tunnelsetId'].startswith(prefix):
+            completions[entry['tunnelsetId']+' '] = entry['tunnelsetId']
+    return
+
+command.add_completion('tunnelset-id-completion', tunnelset_id_completion,
+                       {'kwargs': { 'prefix'       : '$text',
+                                    'completions'  : '$completions',
+                                    }})
 
 def policy_id_completion(prefix, completions):
     query_url = "http://127.0.0.1:8000/rest/v1/showpolicy"
