@@ -17,7 +17,7 @@ POLICY_SUBMODE_COMMAND_DESCRIPTION = {
     'mode'          : 'config',
     'command-type'  : 'config-submode',
     'obj-type'      : 'policy-config',
-    'submode-name'  : 'config-policy',
+    'submode-name'  : 'config-policy', #config-policy-tunnel or config-policy-loadbalance or config-policy-avoid
     'parent-field'  : None,
     'doc'           : 'policy|policy',
     'doc-example'   : 'policy|policy-example',
@@ -56,11 +56,10 @@ POLICY_SUBMODE_COMMAND_DESCRIPTION = {
                     'field'        : 'policy-type',
                     'optional-for-no' : True,
                     'type'         : 'enum',
-                    'values'       : ('tunnel-flow','loadbalanced','avoid','deny'), 
+                    'values'       : ('tunnel-flow','loadbalance','avoid','deny'), 
                     'completion'   : 'complete-object-field',
                     'syntax-help'  : 'Enter a policy type',
                     'doc'          : 'policy|policy',
-                    #'doc-include'  : [ 'type-doc' ],
                 },
             ),
         ),
@@ -179,7 +178,7 @@ DST_PORT_MATCH = (
 
 POLICY_FLOW_ENTRY_COMMAND_DESCRIPTION = {
     'name'            : 'flow-entry',
-    'mode'            : 'config-policy',
+    'mode'            : 'config-policy*',
     'command-type'    : 'config',
     'short-help'      : 'Configure flow entry',
     'doc'             : 'flow-entry|flow-entry',
@@ -241,7 +240,7 @@ POLICY_FLOW_ENTRY_COMMAND_DESCRIPTION = {
 }
 POLICY_TUNNEL_ID_COMMAND_DESCRIPTION = {
     'name'            : 'tunnel',
-    'mode'            : 'config-policy',
+    'mode'            : 'config-policy-tunnel',
     #'obj-type'        : 'policy-config',
     'command-type'    : 'config',
     'short-help'      : 'Configure tunnel id',
@@ -249,13 +248,13 @@ POLICY_TUNNEL_ID_COMMAND_DESCRIPTION = {
     #'doc-example'     : 'policy|policy-tunnel-example',
     'parent-field'    : 'policy',
     'args' : {
+        'field'        : 'tunnel-id',
+        'completion'   : 'tunnel-id-completion',
         'action'       : (
                             {
                                 'proc' : 'create-policy',
                             },
                          ),
-        'completion'   : 'tunnel-id-completion',
-        'field'        : 'tunnel-id',
         'type'         : 'identifier',
         'syntax-help'  : 'Enter tunnel id',
         'doc'          : 'policy|tunnel-id',
@@ -265,7 +264,7 @@ POLICY_TUNNEL_ID_COMMAND_DESCRIPTION = {
 
 POLICY_TUNNELSET_ID_COMMAND_DESCRIPTION = {
     'name'            : 'tunnelset',
-    'mode'            : 'config-policy',
+    'mode'            : 'config-policy-loadbalance',
     #'obj-type'        : 'policy-config',
     'command-type'    : 'config',
     'short-help'      : 'Configure tunnelset id',
@@ -273,13 +272,13 @@ POLICY_TUNNELSET_ID_COMMAND_DESCRIPTION = {
     #'doc-example'     : 'policy|policy-tunnel-example',
     'parent-field'    : 'policy',
     'args' : {
+        'field'        : 'tunnelset-id',
+        'completion'   : 'tunnelset-id-completion',
         'action'       : (
                             {
                                 'proc' : 'create-policy',
                             },
                          ),
-        'completion'   : 'tunnelset-id-completion',
-        'field'        : 'tunnelset-id',
         'type'         : 'identifier',
         'syntax-help'  : 'Enter tunnelset id',
         'doc'          : 'policy|tunnelset-id',
@@ -289,7 +288,7 @@ POLICY_TUNNELSET_ID_COMMAND_DESCRIPTION = {
 
 POLICY_PRIORITY_COMMAND_DESCRIPTION = {
     'name'            : 'priority',
-    'mode'            : 'config-policy',
+    'mode'            : 'config-policy*',
     'command-type'    : 'config',
     'short-help'      : 'Configure policy priority',
     'doc'             : 'policy|priority',
@@ -330,7 +329,6 @@ SHOW_POLICY_COMMAND_DESCRIPTION = {
         },
     )
 }
-
 
 def tunnel_id_completion(prefix, completions):
     query_url = "http://127.0.0.1:8000/rest/v1/showtunnel"

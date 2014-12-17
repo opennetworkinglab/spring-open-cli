@@ -95,8 +95,9 @@ def check_rest_result(result, message=None):
 
 tunnelset_id=None
 tunnelset_dict=[]
+tunnelset_remove_tunnels=[]
 def tunnelset_create(data=None):
-    global tunnelset_id,tunnelset_dict
+    global tunnelset_id,tunnelset_dict,tunnelset_remove_tunnels
     if sdnsh.description:   # description debugging
         print "tunnelset_create:" , data
     if data.has_key('tunnelset-id'):
@@ -105,22 +106,27 @@ def tunnelset_create(data=None):
                 print "tunnelset_create: previous data is not cleaned up"
             tunnelset_id=None
             tunnelset_dict=[]
+            tunnelset_remove_dict=[]
         tunnelset_id=data['tunnelset-id']
         tunnelset_dict=[]
+        tunnelset_remove_dict=[]
     if sdnsh.description:   # description debugging
         print "tunnelset_create:" , tunnelset_id
 
 def tunnelset_config_exit():
-    global tunnelset_id,tunnelset_dict
+    global tunnelset_id,tunnelset_dict,tunnelset_remove_tunnels
     if sdnsh.description:   # description debugging
         print "tunnelset_config_exit entered", tunnelset_dict
-    if tunnelset_dict:
+    if (len(tunnelset_dict) > 0) or (len(tunnelset_remove_tunnels)>0):
         url_str = ""
         entries = tunnelset_dict
         url_str = "http://%s/rest/v1/tunnelset/" % (sdnsh.controller)
         obj_data = {}
         obj_data['tunnelset_id']=tunnelset_id
-        obj_data['tunnel_params']=entries
+        if (len(entries) > 0):
+            obj_data['tunnel_params']=entries
+        if (len(tunnelset_remove_tunnels) > 0):
+            obj_data['remove_tunnel_params']=tunnelset_remove_tunnels
         result = "fail"
         try:
             result = sdnsh.store.rest_post_request(url_str,obj_data)
@@ -129,6 +135,7 @@ def tunnelset_config_exit():
             print sdnsh.rest_error_dict_to_message(errors)
         # LOOK! successful stuff should be returned in json too.
         tunnelset_dict = []
+        tunnelset_remove_tunnels = []
         tunnelset_id = None
         curr_tunnel_id = None
         if result != "success":
@@ -141,7 +148,7 @@ def tunnelset_remove(data=None):
     if sdnsh.description:   # description debugging
         print "tunnelset_remove:" , data
     tunnelset_id=data['tunnelset-id']
-    url_str = "http://%s/rest/v1/tunnel/" % (sdnsh.controller)
+    url_str = "http://%s/rest/v1/tunnelset/" % (sdnsh.controller)
     obj_data = {}
     obj_data['tunnelset_id']=data['tunnelset-id']
     result = "fail"
@@ -175,7 +182,7 @@ def tunnel_create(data=None):
         print "tunnel_create:" , tunnel_id, tunnel_dict
 
 def tunnel_config_exit():
-    global tunnel_id,tunnel_dict
+    global tunnel_id,tunnel_dict,tunnelset_dict
     if sdnsh.description:   # description debugging
         print "tunnel_config_exit entered", tunnel_dict
         
@@ -206,20 +213,24 @@ def tunnel_config_exit():
     #Clear the transit information    
             
 def tunnel_remove(data=None):
+    global tunnelset_remove_tunnels
     if sdnsh.description:   # description debugging
         print "tunnel_remove:" , data
     tunnel_id=data['tunnel-id']
-    url_str = "http://%s/rest/v1/tunnel/" % (sdnsh.controller)
-    obj_data = {}
-    obj_data['tunnel_id']=data['tunnel-id']
-    result = "fail"
-    try:
-        result = sdnsh.store.rest_post_request(url_str,obj_data,'DELETE')
-    except Exception, e:
-        errors = sdnsh.rest_error_to_dict(e)
-        print sdnsh.rest_error_dict_to_message(errors)
-    if not result.startswith("SUCCESS"):
-        print result
+    if tunnelset_id:
+        tunnelset_remove_tunnels.append(tunnel_id)
+    else:
+        url_str = "http://%s/rest/v1/tunnel/" % (sdnsh.controller)
+        obj_data = {}
+        obj_data['tunnel_id']=data['tunnel-id']
+        result = "fail"
+        try:
+            result = sdnsh.store.rest_post_request(url_str,obj_data,'DELETE')
+        except Exception, e:
+            errors = sdnsh.rest_error_to_dict(e)
+            print sdnsh.rest_error_dict_to_message(errors)
+        if not result.startswith("SUCCESS"):
+            print result
 
 
 policy_obj_data = {}
@@ -821,6 +832,16 @@ def push_mode_stack(mode_name, obj_type, data, parent_field = None, parent_id = 
     if (mode_name == 'config-tunnel'):
         if (current_mode == 'config-tunnelset'):
             mode_name = 'config-tunnelset-tunnel'
+    if (mode_name == 'config-policy'):
+        if (data.has_key('policy-type')):
+            if (data['policy-type'] == 'tunnel-flow'):
+                mode_name = 'config-policy-tunnel'
+            if (data['policy-type'] == 'loadbalance'):
+                mode_name = 'config-policy-loadbalance'
+            if (data['policy-type'] == 'avoid'):
+                mode_name = 'config-policy-avoid'
+            if sdnsh.description:   # description debugging
+                print "Changing config-policy sub mode to ", mode_name
 
     if sdnsh.description:   # description debugging
         print "push_mode: ", mode_name, obj_type, data, parent_field, parent_id
@@ -936,7 +957,7 @@ def push_mode_stack(mode_name, obj_type, data, parent_field = None, parent_id = 
         exitCallback = tunnelset_config_exit
     if ((mode_name == 'config-tunnel') or (mode_name == 'config-tunnelset-tunnel')):
         exitCallback = tunnel_config_exit
-    if (mode_name == 'config-policy'):
+    if (mode_name.startswith('config-policy')):
         exitCallback = policy_config_exit
     sdnsh.push_mode(mode_name, obj_type, key, exitCallback)
 

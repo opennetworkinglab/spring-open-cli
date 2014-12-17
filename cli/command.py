@@ -1352,6 +1352,28 @@ class CommandHandler(object):
                 matching_commands = self.get_matching_commands(command_word,
                                                                self.is_no_command,
                                                                command_registry)
+                # There may be multiple results. We need to figure out it there's
+                # an unambiguous match. The heuristic we use is to iterate over
+                # the command words and try to find a single result which has an
+                # exact match on the word while all the others are prefix matches.
+                # If there are multiple results that are exact matches, then we
+                # discard the other results that were prefix matches and continue
+                # with the next command word. If at an iteration all of the
+                # results are prefix matches for the current word, then we check
+                # all of the full tokens that were prefix matched by the command
+                # word. If all of the results have the same full token, then we
+                # continue. If there are multiple full tokens, then that's
+                # indicative of an ambiguous command, so we break out of the loop
+                # and raise an ambiguous command exception.
+                exact_match_commands = []
+                for matching_command in matching_commands:
+                    command, prefix_match = matching_command
+                    if prefix_match == False:
+                        #exact match found
+                        exact_match_commands.append(matching_command)
+                if len(exact_match_commands) > 0:
+                    matching_commands = exact_match_commands
+                    
                 for matching_command in matching_commands:
                     command, prefix_match = matching_command
                     self.handle_one_command(command, prefix_match, words)
@@ -1795,7 +1817,7 @@ class CommandCompleter(CommandHandler):
                     }
                     arg_scopes.insert(0, invocation_scope)
                     if sdnsh.description: # for deubugging, print command name
-                        print command['self'], completion_proc
+                        print "command and completion_proc", command['self'], completion_proc
                     try:
                         _result = _call_proc(completion_proc, completion_registry,
                                             arg_scopes, command)
