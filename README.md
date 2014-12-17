@@ -1,8 +1,13 @@
-ONOS Segment Routing (SR) CLI
+ONOS SPRING-OPEN CLI
 ==============================
 
-This repository contains CLI for Segment Routing Usecase running on ONOS SDN 
-controller. 
+This repository contains the CLI for the Segment Routing usecase running on ONOS.
+The CLI used for this project is a modified version of the CLI originally submitted to open-source here: 
+https://github.com/opendaylight/net-virt-platform/tree/master/cli
+
+Follow the instructions for installing and using the CLI here:
+https://wiki.onosproject.org/display/ONOS/Installation+Guide#InstallationGuide-CLIforSPRING-OPEN
+
 
 # Building #
 Install prerequisites.  You'll just need a basic functioning build
