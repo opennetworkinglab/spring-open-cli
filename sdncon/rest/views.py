@@ -56,7 +56,10 @@ onos = 1
 
 
 def controller_url(*elements):
-    CONTROLLER_URL_PREFIX = "http://%s:%s/wm/" % (controller_rest_ip, controller_rest_port)
+    if onos == 2:
+        CONTROLLER_URL_PREFIX = "http://%s:%s/" % (controller_rest_ip, controller_rest_port)
+    else:
+        CONTROLLER_URL_PREFIX = "http://%s:%s/wm/" % (controller_rest_ip, controller_rest_port)
     return CONTROLLER_URL_PREFIX + '/'.join(elements)
 
 class RestException(Exception):
@@ -717,18 +720,22 @@ def do_controller_storage_table_list(request):
 def do_device(request):
     if onos == 0:
         return get_sdnplatform_query(request, "device")
-    else:
+    elif onos == 1:
         url = controller_url("onos", "topology", "hosts")
-        if request.META['QUERY_STRING']:
-            url += '?' + request.META['QUERY_STRING']
-        return get_sdnplatform_response(url)        
+    else:
+        url = controller_url("onos", "v1", "hosts")
+    if request.META['QUERY_STRING']:
+        url += '?' + request.META['QUERY_STRING']
+    return get_sdnplatform_response(url)        
 
 @safe_rest_view
 def do_switches(request):
     if onos == 0:
         url = controller_url("core", "controller", "switches", "json")
-    else:
+    elif onos == 1:
         url = controller_url("onos", "topology", "switches")
+    else:
+        url = controller_url("onos", "v1", "devices")
     if request.META['QUERY_STRING']:
         url += '?' + request.META['QUERY_STRING']
     return get_sdnplatform_response(url)        
@@ -776,8 +783,10 @@ def do_controller(request):
 def do_links(request):
     if onos == 0:
         url = controller_url("topology", "links", "json")
-    else:
+    elif onos == 1:
         url = controller_url("onos", "topology", "links")
+    else:
+        url = controller_url("onos", "v1", "links")
     if request.META['QUERY_STRING']:
         url += '?' + request.META['QUERY_STRING']
     return get_sdnplatform_response(url)        

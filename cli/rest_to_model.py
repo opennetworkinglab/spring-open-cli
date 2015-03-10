@@ -406,64 +406,88 @@ def get_model_from_url(obj_type, data):
         switch_match = data.get('dpid')
         switch_prefix = data.get('dpid__startswith')
 
-        # this synthetic obj_type's name is 'switches' in an attempt
-        # to disabigutate it from 'class Switch'
-        #TODO: Need figure out a better way to get url (Through sdncon framework)
-        url = "http://%s/rest/v1/mastership" % sdnsh.controller
-        try:
-            result2 = sdnsh.store.rest_simple_request(url)
-            check_rest_result(result2)
-            mastership_data = json.loads(result2)
-        except Exception, e:
-            if sdnsh.description:   # description debugging
-                print "get_model_from_url: failed request %s: '%s'" % (url, e)
-            entries = []
-        for entry in entries:
-            dpid = entry.get('dpid')
-            if(dpid in mastership_data.keys()):
-                #As there is only one master for switch
-                controller = mastership_data[dpid][0].get('controllerId')
-            else:
-                controller = None
-            if switch_match and switch_match != entry['dpid']:
-                continue
-            if switch_prefix and not entry['dpid'].startswith(switch_prefix):
-                continue
-            if onos == 1:
+        if onos == 1:
+            # this synthetic obj_type's name is 'switches' in an attempt
+            # to disabigutate it from 'class Switch'
+            #TODO: Need figure out a better way to get url (Through sdncon framework)
+            url = "http://%s/rest/v1/mastership" % sdnsh.controller
+            try:
+                result2 = sdnsh.store.rest_simple_request(url)
+                check_rest_result(result2)
+                mastership_data = json.loads(result2)
+            except Exception, e:
+                if sdnsh.description:   # description debugging
+                    print "get_model_from_url: failed request %s: '%s'" % (url, e)
+                entries = []
+            for entry in entries:
+                dpid = entry.get('dpid')
+                if(dpid in mastership_data.keys()):
+                    #As there is only one master for switch
+                    controller = mastership_data[dpid][0].get('controllerId')
+                else:
+                    controller = None
+                if switch_match and switch_match != entry['dpid']:
+                    continue
+                if switch_prefix and not entry['dpid'].startswith(switch_prefix):
+                    continue
+                if onos == 1:
+                    result.append({
+                       'dpid'                : entry['dpid'],
+                       'switch-alias'        : entry['stringAttributes']['name'],
+                       'connected-since'     : entry['stringAttributes']['ConnectedSince'],
+                       'ip-address'          : entry['stringAttributes']['remoteAddress'],
+                       'type'                : entry['stringAttributes']['type'],
+                       'controller'          : controller
+                    })
+                else:
+                    attrs = entry['attributes']
+                    actions = entry['actions']
+                    capabilities = entry['capabilities']
+                    inet_address = entry.get('inetAddress')
+                    ip_address = ''
+                    tcp_port = ''
+                    if inet_address:
+                        # Current Java value looks like: /192.168.2.104:38420
+                        inet_parts = inet_address.split(':')
+                        ip_address = inet_parts[0][1:]
+                        tcp_port = inet_parts[1]
+        
+                    result.append({
+                       'dpid'                : entry['dpid'],
+                       'connected-since'     : entry['connectedSince'],
+                       'ip-address'          : ip_address,
+                       'tcp-port'            : tcp_port,
+                       'actions'             : actions,
+                       'capabilities'        : capabilities,
+                       'dp-desc'             : attrs.get('DescriptionData', ''),
+                       'fast-wildcards'      : attrs.get('FastWildcards', ''),
+                       'supports-nx-role'    : attrs.get('supportsNxRole', ''),
+                       'supports-ofpp-flood' : attrs.get('supportsOfppFlood', ''),
+                       'supports-ofpp-table' : attrs.get('supportsOfppTable', ''),
+                       'core-switch'         : False,
+                    })
+        elif onos == 2:
+            for entry in entries.get('devices'):
+                dpid = entry.get('id')
+                #if(dpid in mastership_data.keys()):
+                    #As there is only one master for switch
+                #    controller = mastership_data[dpid][0].get('controllerId')
+                #else:
+                #    controller = None
+                if switch_match and switch_match != entry['id']:
+                    continue
+                if switch_prefix and not entry['id'].startswith(switch_prefix):
+                    continue
+                switchType = entry['mfr'] + '' + \
+                            entry['hw'] + '' + entry['sw'] + '' + \
+                            entry['annotations']['protocol'] 
                 result.append({
-                   'dpid'                : entry['dpid'],
-                   'switch-alias'        : entry['stringAttributes']['name'],
-                   'connected-since'     : entry['stringAttributes']['ConnectedSince'],
-                   'ip-address'          : entry['stringAttributes']['remoteAddress'],
-                   'type'                : entry['stringAttributes']['type'],
-                   'controller'          : controller
-                })
-            else:
-                attrs = entry['attributes']
-                actions = entry['actions']
-                capabilities = entry['capabilities']
-                inet_address = entry.get('inetAddress')
-                ip_address = ''
-                tcp_port = ''
-                if inet_address:
-                    # Current Java value looks like: /192.168.2.104:38420
-                    inet_parts = inet_address.split(':')
-                    ip_address = inet_parts[0][1:]
-                    tcp_port = inet_parts[1]
-    
-                result.append({
-                   'dpid'                : entry['dpid'],
-                   'connected-since'     : entry['connectedSince'],
-                   'ip-address'          : ip_address,
-                   'tcp-port'            : tcp_port,
-                   'actions'             : actions,
-                   'capabilities'        : capabilities,
-                   'dp-desc'             : attrs.get('DescriptionData', ''),
-                   'fast-wildcards'      : attrs.get('FastWildcards', ''),
-                   'supports-nx-role'    : attrs.get('supportsNxRole', ''),
-                   'supports-ofpp-flood' : attrs.get('supportsOfppFlood', ''),
-                   'supports-ofpp-table' : attrs.get('supportsOfppTable', ''),
-                   'core-switch'         : False,
+                   'dpid'                : entry['id'],
+                   'switch-alias'        : None,
+                   'connected-since'     : None,
+                   'ip-address'          : entry['annotations']['channelId'],
+                   'type'                : switchType,
+                   'controller'          : None
                 })
         # now add switch-config
 

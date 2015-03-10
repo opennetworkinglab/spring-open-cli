@@ -1823,23 +1823,44 @@ def command_query_rest(data,
         else:
             result = []
             import fmtcnv
-            if (onos == 1) and (url == 'links'):
-                for entry in entries:
-                    src = entry.get('src')
-                    dst = entry.get('dst')
-                    for tempEntry in entries:
-                        if cmp(src, tempEntry.get('dst')) == 0:
-                            if cmp(dst, tempEntry.get('src')) == 0:
-                                entries.remove(tempEntry)
-                    result.append({
-                       'src-switch'          : fmtcnv.print_switch_and_alias(entry['src']['dpid']),
-                       'src-port'            : entry['src']['portNumber'],
-                       'src-port-state'      : 0,
-                       'dst-switch'          : fmtcnv.print_switch_and_alias(entry['dst']['dpid']),
-                       'dst-port'            : entry['dst']['portNumber'],
-                       'dst-port-state'      : 0,
-                       'type'                : entry['type'],
-                    })
+            if (url == 'links'):
+                if (onos == 1):
+                    for entry in entries:
+                        src = entry.get('src')
+                        dst = entry.get('dst')
+                        for tempEntry in entries:
+                            if cmp(src, tempEntry.get('dst')) == 0:
+                                if cmp(dst, tempEntry.get('src')) == 0:
+                                    entries.remove(tempEntry)
+                        result.append({
+                           'src-switch'          : fmtcnv.print_switch_and_alias(entry['src']['dpid']),
+                           'src-port'            : entry['src']['portNumber'],
+                           'src-port-state'      : 0,
+                           'dst-switch'          : fmtcnv.print_switch_and_alias(entry['dst']['dpid']),
+                           'dst-port'            : entry['dst']['portNumber'],
+                           'dst-port-state'      : 0,
+                           'type'                : entry['type'],
+                        })
+                elif onos == 2:
+                    entries = entries.get('links')
+                    for entry in entries:
+                        src = entry.get('src')
+                        dst = entry.get('dst')
+                        for tempEntry in entries:
+                            if cmp(src, tempEntry.get('dst')) == 0:
+                                if cmp(dst, tempEntry.get('src')) == 0:
+                                    entries.remove(tempEntry)
+                        result.append({
+                           #'src-switch'          : fmtcnv.print_switch_and_alias(entry['src']['device']),
+                           'src-switch'          : entry['src']['device'],
+                           'src-port'            : entry['src']['port'],
+                           'src-port-state'      : 0,
+                           #'dst-switch'          : fmtcnv.print_switch_and_alias(entry['dst']['device']),
+                           'dst-switch'          : entry['dst']['device'],
+                           'dst-port'            : entry['dst']['port'],
+                           'dst-port-state'      : 0,
+                           'type'                : None,
+                        })
             else:
                 result = entries
         
