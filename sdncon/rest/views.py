@@ -52,7 +52,7 @@ BINARY_DATA_CONTENT_TYPE = 'application/octet-stream'
 controller_rest_ip = "127.0.0.1"
 controller_rest_port = "8080"
 
-onos = 1
+onos = 2
 
 
 def controller_url(*elements):
@@ -736,6 +736,23 @@ def do_switches(request):
         url = controller_url("onos", "topology", "switches")
     else:
         url = controller_url("onos", "v1", "devices")
+        try:
+            response_text = urllib2.urlopen(url).read()
+            switch_entries = json.loads(response_text)
+            for entry in switch_entries.get('devices'):
+                url2 = controller_url("onos", "v1", "devices", entry['id'], "ports")
+                response_text2 = urllib2.urlopen(url2).read()
+                port_entries = json.loads(response_text2)
+                entry["ports"] = port_entries["ports"]
+            combined_response_text = json.dumps(switch_entries)
+            return HttpResponse(combined_response_text, JSON_CONTENT_TYPE)
+        except urllib2.HTTPError, e:
+            response_text = e.read()
+            response = simplejson.loads(response_text)
+            response['error_type'] = "SDNPlatformError"
+            return HttpResponse(content=simplejson.dumps(response), 
+                                status=e.code, 
+                                content_type=JSON_CONTENT_TYPE)
     if request.META['QUERY_STRING']:
         url += '?' + request.META['QUERY_STRING']
     return get_sdnplatform_response(url)        

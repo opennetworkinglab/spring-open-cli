@@ -32,6 +32,7 @@ import utif
 import command
 import json
 
+onos = 1
 
 # Timezone constants
 class Utc(tzinfo):
@@ -67,10 +68,18 @@ def get_switches_names(object, data =None):
     #result = command.sdnsh.store.rest_simple_request(query_url)
     entries = result
     entries = json.loads(result)
+    switchIdField = 'dpid'
+    if onos==2:
+        entries = entries['devices']
+        switchIdField = 'id'
     #eprint entries
     for switch in entries:
         #print switch
-        switches_dpid_name[switch.get("dpid")] = switch.get("stringAttributes").get('name')
+        if onos == 1:
+            switches_dpid_name[switch.get(switchIdField)] = switch.get("stringAttributes").get('name')
+        elif onos == 2:
+            switches_dpid_name[switch.get(switchIdField)] = switch.get(switchIdField)
+             
         #print switch.get("dpid")
         #print switch.get("stringAttributes").get('name')
     return switches_dpid_name

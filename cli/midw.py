@@ -264,7 +264,7 @@ def update_switch_port_name_cache():
         return
 
     for port in ports:
-        key_string = port['switch'] + "." + "%d" % port['portNumber']
+        key_string = port['switch'] + "." + "%s" % port['portNumber']
         switch_port_to_name_dict[key_string] = port['portName']
     fmtcnv.update_alias_dict("portNames", switch_port_to_name_dict)
 

@@ -185,27 +185,38 @@ def get_model_from_url(obj_type, data):
         address_space_match = data.get('address-space')
         address_space_prefix = data.get('address-space__startswith')
 
+        if onos == 2:
+            entries = entries['hosts']
+            
         for entry in entries:
             if onos==0:
                 if len(entry['mac']) > 1:
                     raise error.CommandInternalError("host: >1 mac")
                 mac = entry['mac'][0]
                 lastseen = entry['lastSeen']
-            else:
+            elif onos==1:
                 mac = entry['mac']
                 lastseen = 0
+                hostid = '%s' % (mac)
+            elif onos==2:
+                mac = entry['mac']
+                hostid = entry['id']
+                lastseen = 0
 
+            ipFieldName = 'ipv4'
+            if onos == 2:
+                ipFieldName = 'ipAddresses'
             ips = None
             if not ip_match and not ip_prefix:
-                ipv4 = entry['ipv4']
+                ipv4 = entry[ipFieldName]
             elif ip_match:
-                ipv4 = [x for x in entry['ipv4'] if x == ip_match]
+                ipv4 = [x for x in entry[ipFieldName] if x == ip_match]
             elif ip_prefix:
-                ipv4 = [x for x in entry['ipv4'] if x.startswith(ip_prefix)]
+                ipv4 = [x for x in entry[ipFieldName] if x.startswith(ip_prefix)]
 
-            if len(entry['ipv4']):
-                ips = [{'ip-address' : entry['ipv4'], 'last-seen' : lastseen}]
-                    	    #for x in entry['ipv4'] ]
+            if len(entry[ipFieldName]):
+                ips = [{'ip-address' : x, 'last-seen' : lastseen}
+                    	    for x in entry[ipFieldName] ]
             aps = None
             switch = []
             port = []
@@ -215,12 +226,36 @@ def get_model_from_url(obj_type, data):
                 attachPoint = 'attachmentPoint'
                 attachDpid = 'switchDPID'
                 attachPort = 'port'
-            else:
+            elif onos == 1:
                 attachPoint = 'attachmentPoints'
                 attachDpid = 'dpid'
                 attachPort = 'portNumber'
+            elif onos == 2:
+                attachPoint = 'location'
+                attachDpid = 'elementId'
+                attachPort = 'port'
 
-            if len(entry[attachPoint]):
+            if onos == 2:
+                aps = [{'switch' : entry[attachPoint][attachDpid], 
+                        'ingress-port' : entry[attachPoint][attachPort] }]
+                if not dpid_match and not dpid_prefix:
+                    switch = [entry[attachPoint][attachDpid]]
+                elif dpid_match:
+                    if entry[attachPoint][attachDpid] == dpid_match:
+                        switch = [entry[attachPoint][attachDpid]]
+                elif dpid_prefix:
+                    if entry[attachPoint][attachDpid].startswith(dpid_prefix):
+                        switch = [entry[attachPoint][attachDpid]]
+
+                if not port_match and not port_prefix:
+                    port = [entry[attachPoint][attachPort]]
+                elif port_match:
+                    if entry[attachPoint][attachPort] == port_match:
+                        port = [entry[attachPoint][attachPort]]
+                elif port_prefix:
+                    if entry[attachPoint][attachPort].startswith(port_prefix):
+                        port = [entry[attachPoint][attachPort]]
+            elif len(entry[attachPoint]):
                 aps = [{'switch' : x[attachDpid], 'ingress-port' : x[attachPort] }
                        for x in entry[attachPoint]]
 
@@ -250,9 +285,8 @@ def get_model_from_url(obj_type, data):
                 if address_space_prefix and not address_space.startswith(address_space_prefix):
                     continue
 
-            if onos == 1:
-                id = '%s' % (mac)
-                result.append({'id'                : id,
+            if (onos == 1) or (onos == 2):
+                result.append({'id'                : hostid,
                            'mac'               : mac,
                            'ips'               : ips,
                            'ipv4'              : ipv4,
@@ -539,8 +573,13 @@ def get_model_from_url(obj_type, data):
 
         # this synthetic obj_type's name is 'switches' in an attempt
         # to disabigutate it from 'class Switch'
+        if onos == 2:
+            entries = entries["devices"]
         for entry in entries:
-            dpid = entry['dpid']
+            if onos == 2:
+                dpid = entry['id']
+            else:
+                dpid = entry['dpid']
 
             if switch_match and switch_match != dpid:
                 continue
@@ -548,11 +587,23 @@ def get_model_from_url(obj_type, data):
                 continue
 
             for p in entry['ports']:
-                portNumber = p['portNumber']
                 if onos == 0:
+                    portNumber = p['portNumber']
                     name = p['name']
-                else:
+                    state = p['state']
+                elif onos == 1:
+                    portNumber = p['portNumber']
                     name = p['stringAttributes']['name']
+                    state = p['state']
+                elif onos == 2:
+                    portNumber = p['port']
+                    if portNumber == 'local':
+                        portNumber = 0
+                    name = p['annotations']['portName']
+                    if p['isEnabled'] == 'True':
+                        state = 'up'
+                    else:
+                        state = 'down'
 
                 if name_match and name.lower() != name_match:
                     continue
@@ -565,7 +616,7 @@ def get_model_from_url(obj_type, data):
                                     'switch'             : dpid,
                                     'portName'           : p['name'],
                                     'config'             : p['config'],
-                                    'state'              : p['state'],
+                                    'state'              : state,
                                     'advertisedFeatures' : p['advertisedFeatures'],
                                     'currentFeatures'    : p['currentFeatures'],
                                     'hardwareAddress'    : p['hardwareAddress'],
@@ -577,7 +628,7 @@ def get_model_from_url(obj_type, data):
                                     'switch'             : dpid,
                                     'portName'           : name,
                                     'config'             : 0,
-                                    'state'              : p['state'],
+                                    'state'              : state,
                                     'advertisedFeatures' : 0,
                                     'currentFeatures'    : 0,
                                     'hardwareAddress'    : 0,
